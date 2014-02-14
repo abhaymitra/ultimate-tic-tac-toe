@@ -86,7 +86,9 @@ class TicTacToeGame(game.Game):
 class State(game.State):
 	def __init__(self,PlayerList,NumPlayers=0):
 		super(State,self).__init__(PlayerList,NumPlayers)
-		self.won = 0
+		self.won = [[None for _ in xrange(3)] for _ in xrange(3)]
+		self.result = "In Progress"
+		self.winner = None
 
 	def init(self,NumPlayers):
 		# [I][J] gives the smaller tic tac toe. [_][_][i][j] gives the player at i,j. None if none present.
@@ -147,45 +149,39 @@ class State(game.State):
 
 
 	def checkState(self):
-		# True if Player 
-		def ifStraightWin(self,Player):
-			for I in xrange(3):
-				rowWin = True
-				for J in xrange(3):
-					if not self.ifSmallWin(I,J,Player):
-						rowWin = False
-				if rowWin:
-					print "row or column"
-					return True
-			for I in xrange(3):
-				colWin = True
-				for J in xrange(3):
-					if not self.ifSmallWin(J,I,Player):
-						colWin = False
-				if colWin:
-					print "Row or Column"
-					return True
-			return False
 		
-		def ifDiagonalWin(self,Player):
-			diagonal1Win,diagonal2Win = True,True
-			for I in xrange(3):
-				if not self.ifSmallWin(I,I,Player):
-					diagonal1Win = False
-				if not self.ifSmallWin(2-I,I,Player):
-					diagonal2Win = False
-			if(diagonal1Win or diagonal2Win):
-				print "Diagonal"
-			return (diagonal2Win or diagonal1Win)
+		for I,J in [(x,y) for x in xrange(3) for y in xrange(3)]:
+			for player in self.PlayerList:
+				if ifSmallWin(self.StateRepresentation, I, J, player) and self.won[I][J]==None:
+					self.won[I][J] = player
 
-		# change to ifsmallwin
-		if (reduce(lambda x,y:x and y, [True if reduce(lambda x,y : x or y, [True if self.ifSmallWin(I,J,player) else False for player in self.PlayerList]) or not checkEmpty(self.StateRepresentation,I,J) else False for I in xrange(3) for J in xrange(3)])):
-			print "All either won or full."
+		for I in xrange(3):
+			if reduce(lambda x,y:x and y,[True if self.won[I][J]==self.won[I][0] else False for J in xrange(3)]) == True and self.won[I][0]!=None:
+				self.result = "Player " + str(self.won[I][0].id) + " won by completing row number " + str(I)
+				self.winner = self.won[I][0]
+				return True
+
+		for I in xrange(3):
+			if reduce(lambda x,y:x and y,[True if self.won[J][I]==self.won[0][I] else False for J in xrange(3)]) == True and self.won[0][I]!=None:
+				self.result = "Player " + str(self.won[0][I].id) + " won by completing column number " + str(I)
+				self.won[0][I]
+				return True		
+
+
+		if self.won[0][0] == self.won[1][1] == self.won[2][2] and self.won[0][0] != None:
+			self.result = "Player " + str(self.won[0][0].id) + " won by completing the major diagonal"
+			self.winner = self.won[0][0].id
+			return True
+		elif self.won[2][0] == self.won[1][1] == self.won[0][2] and self.won[1][1] != None:
+			self.result = "Player " + str(self.won[0][0].id) + " won by completing the minor diagonal"
+			self.winner = self.won[1][1].id
 			return True
 
-		for Player in self.PlayerList:
-			if (ifStraightWin(self,Player) or ifDiagonalWin(self,Player)):
-				return True 
+
+		if (reduce(lambda x,y:x and y, [True if reduce(lambda x,y : x or y, [True if self.ifSmallWin(I,J,player) else False for player in self.PlayerList]) or not checkEmpty(self.StateRepresentation,I,J) else False for I in xrange(3) for J in xrange(3)])):
+			self.result =  "Its a tie."
+			return True
+
 		return False
 
 
@@ -206,6 +202,4 @@ State = State([P1,P2],2)
 Game = TicTacToeGame(State, [P1,P2],True,False)
 
 Game.run()
-
-
 

@@ -19,14 +19,17 @@ class Game(object):
 			for player in self.State.activePlayerList:
 				ifEliminate = True
 				for _ in xrange(3):
-					move = self.State.nextMove(player) 
+					if self.ifprintgame:
+						move = self.State.nextMove(player,True) 
+					else:
+						move = self.State.nextMove(player) 
 					if move is not False:
 						if self.ifprintgame:
 							# a = raw_input()
 							self.printgame()
+							print "------------------------------------------------------"
 						if self.ifwait:
 							a = raw_input("Enter to continue.")
-						print move
 						ifEliminate = False
 						break
 				if ifEliminate:
@@ -35,7 +38,9 @@ class Game(object):
 					pass
 					raise Error("You made a lot of invalid moves.")
 				if self.State.checkState():
-					print self.printgame()
+					if not self.ifprintgame:
+						print self.printgame()
+					print self.State.result
 					return
 
 
@@ -56,6 +61,8 @@ class State(object):
 		self.PlayerList = PlayerList
 		self.activePlayerList = []
 		self.numMoves = 0
+		self.result = "In Progress"
+		self.winner = None
 
 	def init(self,NumPlayers):
 		# Set up the current state here
@@ -69,10 +76,12 @@ class State(object):
 		# Returns state if move valid, otherwise false
 		pass
 
-	def nextMove(self,Player):
+	def nextMove(self,Player,ifPrint=False):
 		move = Player.getMove(self.StateRepresentation,self.PlayerList)
 		nextState = self.validMove(move,Player)
 		if nextState!=False:
+			if ifPrint:
+				print move
 			self.StateRepresentation = nextState[0],nextState[1]
 			self.numMoves += 1
 			return True
