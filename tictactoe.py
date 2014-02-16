@@ -1,6 +1,16 @@
 import random
 import game
+import time
+from timeout import timeout,timer
+import argparse
+import os
 
+# Not to be included in the distribution
+parser = argparse.ArgumentParser()
+parser.add_argument("outfile",help="File where the output needs to be stored.")
+args = parser.parse_args()
+
+timeP2 = [300,0]
 
 # Returns true if Player has won the smaller Tic-Tac-Toe board at I,J.
 def ifSmallWin(State,I,J,Player):
@@ -27,14 +37,17 @@ class AIPlayer(game.Player):
 	# Here, I,J are the row and column number of the bigger Tic Tac Toe board and i,j of the smaller board at position I,J.
 	# State[0][I][J][i][j] stores the Player at that board position if any, else None.
 	# State[1] is a 2-tuple (I,J) indicating the board position the last player sent the current player to.
+	# @timeout(timeP2)
 	def getMove(self,State,PlayerList=[]):
-		pass	
+		pass
+
 
 
 class ManualPlayer(game.Player):
 	def __init__(self,id):
 		super(ManualPlayer, self).__init__(id)
 
+	
 	def getMove(self,State,PlayerList=[]):
 		move = input()
 		if len(move) == 4:
@@ -45,7 +58,6 @@ class ManualPlayer(game.Player):
 class RandomPlayer(game.Player):
 	def __init__(self,id):
 		super(RandomPlayer, self).__init__(id)
-
 
 	def getMove(self,State,PlayerList=[]):
 		I,J = State[1]
@@ -87,8 +99,8 @@ class State(game.State):
 	def __init__(self,PlayerList,NumPlayers=0):
 		super(State,self).__init__(PlayerList,NumPlayers)
 		self.won = [[None for _ in xrange(3)] for _ in xrange(3)]
-		self.result = "In Progress"
-		self.winner = None
+		self.moves = []
+
 
 	def init(self,NumPlayers):
 		# [I][J] gives the smaller tic tac toe. [_][_][i][j] gives the player at i,j. None if none present.
@@ -131,11 +143,13 @@ class State(game.State):
 			return (self.StateRepresentation[0],(i,j))
 		
 		if (self.numMoves==0):
+			self.moves.append(str(I) +str(J) + str(i) + str(j))
 			return constructState(self)
 		else:
 			if self.StateRepresentation[1] != (I,J) :	
 				if reduce(lambda x,y : x or y, [True if self.ifSmallWin(self.StateRepresentation[1][0],self.StateRepresentation[1][1],player) else False for player in self.PlayerList]) or not checkEmpty(self.StateRepresentation,self.StateRepresentation[1][0],self.StateRepresentation[1][1]):
 					if self.StateRepresentation[0][I][J][i][j] == None  :
+						self.moves.append(str(I) +str(J) + str(i) + str(j))
 						return constructState(self)
 					else:
 						return False
@@ -143,6 +157,7 @@ class State(game.State):
 					return False
 			else:
 				if self.StateRepresentation[0][I][J][i][j] == None :
+					self.moves.append(str(I) +str(J) + str(i) + str(j))
 					return constructState(self)
 				else:
 					return False
@@ -154,6 +169,10 @@ class State(game.State):
 			for player in self.PlayerList:
 				if ifSmallWin(self.StateRepresentation, I, J, player) and self.won[I][J]==None:
 					self.won[I][J] = player
+					if player.id == 1 :
+						self.moves.append(str(I) + str(J) + "XX")
+					elif player.id == 2:
+						self.moves.append(str(I) + str(J) + "00")
 
 		for I in xrange(3):
 			if reduce(lambda x,y:x and y,[True if self.won[I][J]==self.won[I][0] else False for J in xrange(3)]) == True and self.won[I][0]!=None:
@@ -173,7 +192,7 @@ class State(game.State):
 			self.winner = self.won[0][0].id
 			return True
 		elif self.won[2][0] == self.won[1][1] == self.won[0][2] and self.won[1][1] != None:
-			self.result = "Player " + str(self.won[0][0].id) + " won by completing the minor diagonal"
+			self.result = "Player " + str(self.won[1][1].id) + " won by completing the minor diagonal"
 			self.winner = self.won[1][1].id
 			return True
 
@@ -199,7 +218,12 @@ State = State([P1,P2],2)
 # Change the third argument to True to print the gamestate after every move.
 # Change the fourth argument to True to wait for keyboard input to move to the next state.
 # Press enter to advance the game by two moves.
-Game = TicTacToeGame(State, [P1,P2],True,False)
+Game = TicTacToeGame(State, [P1,P2],False,False)
 
 Game.run()
+
+with open(os.getcwd() + "/"+ args.outfile,'w') as outfile:
+	for i in xrange(len(Game.State.moves) - 1):
+		outfile.write(Game.State.moves[i] + ",")
+	outfile.write(Game.State.moves[len(Game.State.moves)-1])
 

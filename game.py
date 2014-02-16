@@ -1,5 +1,6 @@
 import time
 
+
 class Error(Exception):
 	def __init__(self,errormsg):
 		print errormsg
@@ -47,6 +48,7 @@ class Game(object):
 class Player(object):
 	def __init__(self,id):
 		self.id = id
+		self.time = [0]
 
 	def getMove(self,State,PlayerList=[]):
 		# Return a state 
